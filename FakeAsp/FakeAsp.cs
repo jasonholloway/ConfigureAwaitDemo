@@ -10,7 +10,9 @@ namespace FakeAsp
     public static class FakeAsp
     {
         [ThreadStatic]
-        public static (TaskCompletionSource<bool>, Func<CancellationToken, Task>, CancellationToken) Context;
+        static FakeAspContext _context;
+
+        public static FakeAspContext Context => _context;
 
         static FakeAsp()
         {
@@ -29,12 +31,12 @@ namespace FakeAsp
                     {
                         try
                         {
-                            Context = (tcs, fn, cancel);
+                            _context = new FakeAspContext(tcs, fn, cancel);
                             HttpRuntime.ProcessRequest(new SimpleWorkerRequest("", "", new StringWriter()));
                         }
                         catch (Exception ex)
                         {
-                            tcs.SetException(ex);
+                            tcs.TrySetException(ex);
                         }
                     }));
 
@@ -48,10 +50,34 @@ namespace FakeAsp
                 }
                 catch(Exception ex)
                 {
-                    tcs.SetException(ex);
+                    tcs.TrySetException(ex);
                 }
 
                 return tcs.Task;
             });
     }
+
+    public class FakeAspContext
+    {
+        readonly TaskCompletionSource<bool> _tcs;
+        readonly Func<CancellationToken, Task> _fn;
+        readonly CancellationToken _cancel;
+
+        public FakeAspContext(TaskCompletionSource<bool> tcs, Func<CancellationToken, Task> fn, CancellationToken cancel)
+        {
+            _tcs = tcs;
+            _fn = fn;
+            _cancel = cancel;
+        }
+
+        public void OnError(Exception ex)
+            => _tcs.TrySetException(ex);
+
+        public void OnComplete()
+            => _tcs.TrySetResult(true);
+
+        public Task RunFn()
+            => _fn(_cancel);
+    }
+
 }

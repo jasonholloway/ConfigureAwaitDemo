@@ -34,15 +34,15 @@ namespace ConfigAwait.Tests
             {
                 Get["/", true] = async (_, __) =>
                 {
-                    var (tcs, fnTest, cancel) = FakeAsp.FakeAsp.Context;
+                    var x = FakeAsp.FakeAsp.Context;
                     try
                     {
-                        await fnTest(cancel);
-                        tcs.SetResult(true);
+                        await x.RunFn();
+                        x.OnComplete();
                     }
                     catch(Exception ex)
                     {
-                        tcs.SetException(ex);
+                        x.OnError(ex);
                     }
 
                     return "hello!";
