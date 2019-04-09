@@ -17,8 +17,40 @@ namespace FakeAsp.Xunit
             : base(messageSink) {
         }
 
+        protected override ITestFrameworkDiscoverer CreateDiscoverer(IAssemblyInfo assemblyInfo)
+        {
+            return base.CreateDiscoverer(assemblyInfo);
+        }
+
         protected override ITestFrameworkExecutor CreateExecutor(AssemblyName assemblyName)
             => new FakeAspTestExecutor(assemblyName, SourceInformationProvider, DiagnosticMessageSink);
+    }
+
+    class FakeAspTestDiscoverer : ITestFrameworkDiscoverer
+    {
+        public string TargetFramework => throw new NotImplementedException();
+
+        public string TestFrameworkDisplayName => throw new NotImplementedException();
+
+        public void Dispose()
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Find(bool includeSourceInformation, IMessageSink discoveryMessageSink, ITestFrameworkDiscoveryOptions discoveryOptions)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Find(string typeName, bool includeSourceInformation, IMessageSink discoveryMessageSink, ITestFrameworkDiscoveryOptions discoveryOptions)
+        {
+            throw new NotImplementedException();
+        }
+
+        public string Serialize(ITestCase testCase)
+        {
+            throw new NotImplementedException();
+        }
     }
 
     class FakeAspTestExecutor : XunitTestFrameworkExecutor

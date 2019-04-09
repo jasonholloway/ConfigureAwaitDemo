@@ -1,5 +1,4 @@
-﻿using FakeAsp;
-using Nancy;
+﻿using Nancy;
 using Nancy.Bootstrapper;
 using Nancy.Hosting.Aspnet;
 using System;
@@ -8,9 +7,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using static FakeAsp.FakeAsp;
 
-namespace ConfigAwait.Tests
+namespace FakeAsp.Nancy
 {
-
     public static class FakeNancyAsp
     {
         public static Test NancyAsp(Func<Task> fn)
@@ -34,7 +32,7 @@ namespace ConfigAwait.Tests
             {
                 Get["/", true] = async (_, __) =>
                 {
-                    var x = FakeAsp.FakeAsp.Context;
+                    var x = FakeAsp.Context;
                     try
                     {
                         await x.RunFn();

@@ -6,19 +6,21 @@ using System.Threading.Tasks;
 
 namespace FakeAsp
 {
+
     public static class TestExtensions
     {
         public static Test Timeout(this Test test, int timeout)
             => new Test(async cancel => {
                 var timerCancelSource = new CancellationTokenSource();
                 var comboCancelSource = CancellationTokenSource.CreateLinkedTokenSource(cancel, timerCancelSource.Token);
-                comboCancelSource.Token.Register(() => Trace.WriteLine("Cancelling!"));
 
-                var timer = Task.Run(() => Task.Delay(timeout));
+                var timer = Task.Run(() => DebuggingFriendlyTimer.Delay(timeout));
                 var completed = await Task.WhenAny(timer, test.Run(comboCancelSource.Token));
 
                 timerCancelSource.Cancel();
+
                 if (completed == timer) throw new TimeoutException();
+                else await completed;
             });
 
         class TimeoutException : Exception { }
@@ -34,4 +36,15 @@ namespace FakeAsp
                 .Throws<TimeoutException>("Deadlock expected!");
     }
 
+    class DebuggingFriendlyTimer
+    {
+        public static async Task Delay(int ms)
+        {
+            while(ms > 0)
+            {
+                await Task.Delay(30);
+                ms -= 30;
+            }
+        }
+    }
 }

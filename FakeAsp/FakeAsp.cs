@@ -23,38 +23,42 @@ namespace FakeAsp
             => RunAsp(_ => fn());
 
         public static Test RunAsp(Func<CancellationToken, Task> fn)
-            => new Test(cancel => {
-                var tcs = new TaskCompletionSource<bool>();
-                try
+            => new Test(cancel => RunArbitraryFn(fn, cancel))
+                    .Timeout(3000);
+
+        static Task RunArbitraryFn(Func<CancellationToken, Task> fn, CancellationToken cancel)
+        {
+            var tcs = new TaskCompletionSource<bool>();
+            try
+            {
+                var thread = new Thread(new ThreadStart(() =>
                 {
-                    var thread = new Thread(new ThreadStart(() =>
+                    try
                     {
-                        try
-                        {
-                            _context = new FakeAspContext(tcs, fn, cancel);
-                            HttpRuntime.ProcessRequest(new SimpleWorkerRequest("", "", new StringWriter()));
-                        }
-                        catch (Exception ex)
-                        {
-                            tcs.TrySetException(ex);
-                        }
-                    }));
-
-                    thread.Start();
-
-                    cancel.Register(() =>
+                        _context = new FakeAspContext(tcs, fn, cancel);
+                        HttpRuntime.ProcessRequest(new SimpleWorkerRequest("", "", new StringWriter()));
+                    }
+                    catch (Exception ex)
                     {
-                        thread.Abort();
-                        tcs.TrySetException(new Exception("Cancelled!"));
-                    });
-                }
-                catch(Exception ex)
+                        tcs.TrySetException(ex);
+                    }
+                }));
+
+                thread.Start();
+
+                cancel.Register(() =>
                 {
-                    tcs.TrySetException(ex);
-                }
+                    thread.Abort();
+                    tcs.TrySetException(new Exception("Cancelled!"));
+                });
+            }
+            catch(Exception ex)
+            {
+                tcs.TrySetException(ex);
+            }
 
-                return tcs.Task;
-            });
+            return tcs.Task;
+        }
     }
 
     public class FakeAspContext

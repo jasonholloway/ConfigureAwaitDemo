@@ -1,49 +1,16 @@
 ﻿using Shouldly;
 using System;
-using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
 using Xunit;
-using System.Diagnostics;
 using System.Runtime.Remoting.Messaging;
 using static FakeAsp.FakeAsp;
 using FakeAsp;
 
-namespace ConfigAwait.Tests
+namespace ConfigAwait.TaskFriendly
 {
     public class Tests
     {
-        public Tests()
-        {
-            FakeNancyAsp.Setup();
-        }
-
-        [Fact]
-        public Task HasAspSyncContext()
-            => RunAsp(async () => {
-                SynchronizationContext.Current.ShouldBeOfType(Types.AspNetSynchronizationContext);
-            });
-
-        [Fact]
-        public Task HasAspSyncContext_AfterAwait()
-            => RunAsp(async () => {
-                await Task.Delay(10);
-                SynchronizationContext.Current.ShouldBeOfType(Types.AspNetSynchronizationContext);
-            });
-
-        [Fact]
-        public Task ExceptionPropagates()
-            => RunAsp(async () => {
-                throw new DummyException();
-            }).Throws<DummyException>();
-
-        [Fact]
-        public Task ExceptionPropagates_AfterAwait()
-            => RunAsp(async () => {
-                await Task.Delay(10);
-                throw new DummyException();
-            }).Throws<DummyException>();
-
         [Fact]
         public Task RetainsHttpContext_AcrossAwaits()
             => RunAsp(async () => {
@@ -61,28 +28,14 @@ namespace ConfigAwait.Tests
             });
 
         [Fact]
-        public Task Deadlocks_OnBlockingNestedAwait()
-            => RunAsp(async ct => {
-                TraceThread("TestStart");
-                NestedAwait().Wait(ct);
-            }).Deadlocks();
-
-        [Fact]
-        public Task Deadlocks_OnBlockingNestedAwaitResult()
-            => RunAsp(async () => {
-                var i = NestedAwait().Result;
-            }).Deadlocks();
-
-        [Fact]
-        public Task DoesntDeadlock_WaitingDirectlyForDelay()
+        public Task WaitingDirectlyForDelay()
             => RunAsp(async () => {
                 Task.Delay(100).Wait();
             });
 
         [Fact]
-        public Task DoesntDeadlock_BlockingOnTaskStartedOnOtherThread()
+        public Task BlockingOnTaskStartedOnOtherThread()
             => RunAsp(async () => {
-                TraceThread("TestStart");
                 var task = new TaskFactory(TaskScheduler.Default)
                                 .StartNew(NestedAwait)
                                 .Unwrap();
@@ -90,34 +43,72 @@ namespace ConfigAwait.Tests
             });
 
         [Fact]
-        public Task Deadlocks_BlockingOnTaskOnSameThread()
+        public Task BlockingOnTaskOnSameThread()
             => RunAsp(async () => {
-                TraceThread("TestStart");
                 var task = new TaskFactory(TaskScheduler.FromCurrentSynchronizationContext())
                                 .StartNew(() => NestedAwait())
                                 .Unwrap();
                 task.Wait();
-            }).Deadlocks();
+            });
 
 
-        class DummyException : Exception { }
+        public class OnCallingAsyncMethod
+        {
+            [Fact]
+            public Task AwaitingWorksFine()
+                => RunAsp(async () => { 
+                    await AsyncMethod();
+                });
 
-        async Task<int> NestedAwait() {
-            TraceThread("NestedAwait before");
+            [Fact]
+            public Task BlockingWait()
+                => RunAsp(async () => {
+                    AsyncMethod().Wait();
+                });
+
+            [Fact]
+            public Task BlockingResult()
+                => RunAsp(async () => {
+                    var i = AsyncMethod().Result;
+                });
+
+            [Fact]
+            public Task InnerConfigAwaitFixes()
+                => RunAsp(async () => {
+                    AsyncMethodWithConfigAwait().Wait();
+                });
+
+            [Fact]
+            public Task OuterConfigAwaitNotEnough()
+                => RunAsp(async () => {
+                    await Exec(async () => {
+                        AsyncMethod().Wait();
+                    }).ConfigureAwait(false);
+                }).Deadlocks();
+
+
+            async Task<int> AsyncMethod()
+            {
+                await Task.Delay(10);
+                return 13;
+            }
+
+            async Task AsyncMethodWithConfigAwait()
+                => await Task.Delay(10).ConfigureAwait(false);
+        }
+
+        static Task Exec(Func<Task> fn) => fn();
+
+
+        static async Task<int> NestedAwait() {
             await Task.Delay(50);
-            TraceThread("NestedAwait after");
             return 13;
         }
 
-        static void TraceThread(string tag)
-        {
-            Trace.WriteLine($"{Thread.CurrentThread.ManagedThreadId}: {tag}");
-            Trace.Flush();
+        static async Task<int> NestedAwaitConfigAwait() {
+            await Task.Delay(50).ConfigureAwait(false);
+            return 13;
         }
-    }
 
-    public static class Types
-    {
-        public static Type AspNetSynchronizationContext = Type.GetType("System.Web.AspNetSynchronizationContext, System.Web, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a");
     }
 }
