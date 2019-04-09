@@ -19,6 +19,9 @@ namespace FakeAsp
             HttpApplication.RegisterModule(typeof(ErrorCatcher));
         }
 
+        public static Test RunAsp(Action fn)
+            => RunAsp(async () => fn());
+
         public static Test RunAsp(Func<Task> fn)
             => RunAsp(_ => fn());
 

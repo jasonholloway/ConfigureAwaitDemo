@@ -55,36 +55,38 @@ namespace ConfigAwait.TaskFriendly
         public class OnCallingAsyncMethod
         {
             [Fact]
-            public Task AwaitingWorksFine()
+            public Task Awaiting()
                 => RunAsp(async () => { 
                     await AsyncMethod();
                 });
 
             [Fact]
-            public Task BlockingWait()
-                => RunAsp(async () => {
+            public Task Blocking_Wait()
+                => RunAsp(() => {
                     AsyncMethod().Wait();
                 });
 
             [Fact]
-            public Task BlockingResult()
-                => RunAsp(async () => {
+            public Task Blocking_Result()
+                => RunAsp(() => {
                     var i = AsyncMethod().Result;
                 });
 
             [Fact]
-            public Task InnerConfigAwaitFixes()
+            public Task Blocking_AboveConfigAwait()
                 => RunAsp(async () => {
-                    AsyncMethodWithConfigAwait().Wait();
+                    Exec(async () => {
+                        await AsyncMethod().ConfigureAwait(false);
+                    }).Wait();
                 });
 
             [Fact]
-            public Task OuterConfigAwaitNotEnough()
+            public Task ConfigAwait_AboveBlocking()
                 => RunAsp(async () => {
-                    await Exec(async () => {
+                    await Exec(() => {
                         AsyncMethod().Wait();
                     }).ConfigureAwait(false);
-                }).Deadlocks();
+                });
 
 
             async Task<int> AsyncMethod()
@@ -98,7 +100,7 @@ namespace ConfigAwait.TaskFriendly
         }
 
         static Task Exec(Func<Task> fn) => fn();
-
+        static Task Exec(Action fn) => Exec(async () => fn());
 
         static async Task<int> NestedAwait() {
             await Task.Delay(50);
