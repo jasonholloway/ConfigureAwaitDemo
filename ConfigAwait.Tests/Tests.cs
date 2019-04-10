@@ -73,6 +73,24 @@ namespace ConfigAwait.TaskFriendly
                 });
 
             [Fact]
+            public Task InnerConfigAwaitFixes()
+                => RunAsp(async () => {
+                    AsyncMethodWithConfigAwait().Wait();
+                });
+
+            [Fact]
+            public Task InnerConfigAwaitFixes2()
+                => RunAsp(async () => {
+                    Exec(async () => await Task.Delay(10).ConfigureAwait(false)).Wait();
+                });
+
+            //[Fact]
+            //public Task InnerConfigAwaitFixes3()
+            //    => RunAsp(async () => {
+            //        Exec(async () => await AsyncMethod().ConfigureAwait(false)).Wait();
+            //    });
+
+            [Fact]
             public Task Blocking_AboveConfigAwait()
                 => RunAsp(async () => {
                     Exec(async () => {

@@ -1,48 +1,48 @@
-﻿using Shouldly;
-using System;
-using System.Diagnostics;
+﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace FakeAsp
 {
-
     public static class TestExtensions
     {
         public static Test Timeout(this Test test, int timeout)
-            => new Test(async cancel => {
-                var timerCancelSource = new CancellationTokenSource();
-                var comboCancelSource = CancellationTokenSource.CreateLinkedTokenSource(cancel, timerCancelSource.Token);
+            => test.MapInner(fn => cancel => 
+            {
+                var x = FakeAsp.Context;
 
-                var timer = Task.Run(() => DebuggingFriendlyTimer.Delay(timeout));
-                var completed = await Task.WhenAny(timer, test.Run(comboCancelSource.Token));
+                Task.Run(() => DebuggingFriendlyTimer.Delay(timeout, cancel)
+                                .ContinueWith(
+                                    _ => x.OnError(new TimeoutException()), 
+                                    TaskContinuationOptions.OnlyOnRanToCompletion));
 
-                timerCancelSource.Cancel();
-
-                if (completed == timer) throw new TimeoutException();
-                else await completed;
+                return fn(cancel);
             });
-
-        class TimeoutException : Exception { }
-
 
         public static Test Throws<Ex>(this Test test, string message = null)
             where Ex : Exception
-            => new Test(cancel => 
-                    Should.ThrowAsync(test.Run(cancel), message, typeof(Ex)));
-
-        public static Test Deadlocks(this Test test, int timeout = 5000)
-            => test.Timeout(timeout)
-                .Throws<TimeoutException>("Deadlock expected!");
+            => test.MapInner(fn => async cancel => {
+                var x = FakeAsp.Context;
+                try
+                {
+                    await fn(cancel);
+                    x.OnError(new Exception($"Didn't throw exception {typeof(Ex)}!"));
+                }
+                catch (Ex) {
+                    x.OnComplete();
+                }
+            }); 
     }
+
+    public class TimeoutException : Exception { }
 
     class DebuggingFriendlyTimer
     {
-        public static async Task Delay(int ms)
+        public static async Task Delay(int ms, CancellationToken ct)
         {
             while(ms > 0)
             {
-                await Task.Delay(30);
+                await Task.Delay(30, ct);
                 ms -= 30;
             }
         }

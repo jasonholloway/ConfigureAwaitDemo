@@ -11,10 +11,10 @@ namespace FakeAsp.Nancy
 {
     public static class FakeNancyAsp
     {
-        public static Test NancyAsp(Func<Task> fn)
-            => new Test(cancel => {
-                return RunAsp(fn);
-            });
+        //public static Test NancyAsp(Func<Task> fn)
+        //    => new Test(cancel => {
+        //        return RunAsp(fn);
+        //    });
 
         static FakeNancyAsp()
         {

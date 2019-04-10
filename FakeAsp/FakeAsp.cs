@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
 using System.Web.Hosting;
+using static FakeAsp.Test;
 
 namespace FakeAsp
 {
@@ -19,17 +20,18 @@ namespace FakeAsp
             HttpApplication.RegisterModule(typeof(ErrorCatcher));
         }
 
-        public static Test RunAsp(Action fn)
-            => RunAsp(async () => fn());
+        public static Test RunAsp(FnInner fn)
+            => Create(fn)
+                .MapOuter(_ => RunArbitraryFn)
+                .Timeout(300);
 
         public static Test RunAsp(Func<Task> fn)
             => RunAsp(_ => fn());
 
-        public static Test RunAsp(Func<CancellationToken, Task> fn)
-            => new Test(cancel => RunArbitraryFn(fn, cancel))
-                    .Timeout(3000);
+        public static Test RunAsp(Action fn)
+            => RunAsp(async () => fn());
 
-        static Task RunArbitraryFn(Func<CancellationToken, Task> fn, CancellationToken cancel)
+        static Task RunArbitraryFn(CancellationToken cancel, FnInner fn)
         {
             var tcs = new TaskCompletionSource<bool>();
             try
@@ -67,10 +69,10 @@ namespace FakeAsp
     public class FakeAspContext
     {
         readonly TaskCompletionSource<bool> _tcs;
-        readonly Func<CancellationToken, Task> _fn;
+        readonly FnInner _fn;
         readonly CancellationToken _cancel;
 
-        public FakeAspContext(TaskCompletionSource<bool> tcs, Func<CancellationToken, Task> fn, CancellationToken cancel)
+        public FakeAspContext(TaskCompletionSource<bool> tcs, FnInner fn, CancellationToken cancel)
         {
             _tcs = tcs;
             _fn = fn;
