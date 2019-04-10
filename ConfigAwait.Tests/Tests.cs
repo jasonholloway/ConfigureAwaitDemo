@@ -13,7 +13,7 @@ namespace ConfigAwait.TaskFriendly
         public class Flow
         {
             [Fact]
-            public Task RetainsHttpContext_AcrossAwaits()
+            public Task HttpContext_AcrossAwaits()
                 => RunAsp(async () => {
                     var ctx = HttpContext.Current;
                     await Task.Delay(10);
@@ -21,7 +21,15 @@ namespace ConfigAwait.TaskFriendly
                 });
 
             [Fact]
-            public Task RetainsCallContext_AcrossAwaits()
+            public Task IllogicalCallContext_AcrossAwaits()
+                => RunAsp(async () => {
+                    CallContext.SetData("hello", "bastard");
+                    await Task.Delay(10);
+                    CallContext.GetData("hello").ShouldBe("bastard");
+                });
+
+            [Fact]
+            public Task LogicalCallContext_AcrossAwaits()
                 => RunAsp(async () => {
                     CallContext.LogicalSetData("hello", "bastard");
                     await Task.Delay(10);
