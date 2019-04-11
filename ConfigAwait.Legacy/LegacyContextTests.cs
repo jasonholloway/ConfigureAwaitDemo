@@ -1,4 +1,6 @@
-﻿namespace ConfigAwait.Tests.TaskFriendly
+﻿using FakeAsp;
+
+namespace ConfigAwait.TaskFriendly
 {
     public class LegacyContextTests : CommonTests<FakeAspRunner>
     {

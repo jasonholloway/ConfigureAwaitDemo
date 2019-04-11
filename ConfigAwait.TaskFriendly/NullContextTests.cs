@@ -2,7 +2,7 @@
 using System;
 using System.Threading.Tasks;
 
-namespace ConfigAwait.Tests.TaskFriendly
+namespace ConfigAwait.TaskFriendly
 {
     public class NullContextTests : CommonTests<NullContextRunner>
     {

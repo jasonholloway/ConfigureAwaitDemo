@@ -2,11 +2,11 @@
 using System.Threading.Tasks;
 using FakeAsp;
 
-namespace ConfigAwait.Tests.TaskFriendly
+namespace FakeAsp
 {
     public class FakeAspRunner : IRunner
     {
         public Test Run(Func<Task> fn)
-            => FakeAsp.FakeAsp.Run(fn);
+            => FakeAsp.Run(fn);
     }
 }
