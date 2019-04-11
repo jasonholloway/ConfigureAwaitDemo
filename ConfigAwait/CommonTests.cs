@@ -3,18 +3,17 @@ using System;
 using System.Threading.Tasks;
 using Xunit;
 using System.Runtime.Remoting.Messaging;
-using static FakeAsp.FakeAsp;
 using System.Web;
+using FakeAsp;
 
-namespace ConfigAwait.Tests
+namespace ConfigAwait
 {
-
-
-    public abstract class CommonTests
+    public abstract class CommonTests<TRunner>
+        where TRunner : IRunner, new()
     {
         [Fact]
         public Task HttpContext_AcrossAwaits()
-            => RunAsp(async () => {
+            => Run(async () => {
                 var ctx = HttpContext.Current;
                 await Task.Delay(10);
                 HttpContext.Current.ShouldBe(ctx);
@@ -22,7 +21,7 @@ namespace ConfigAwait.Tests
 
         [Fact]
         public Task IllogicalCallContext_AcrossAwaits()
-            => RunAsp(async () => {
+            => Run(async () => {
                 CallContext.SetData("hello", "bastard");
                 await Task.Delay(10);
                 CallContext.GetData("hello").ShouldBe("bastard");
@@ -30,7 +29,7 @@ namespace ConfigAwait.Tests
 
         [Fact]
         public Task LogicalCallContext_AcrossAwaits()
-            => RunAsp(async () => {
+            => Run(async () => {
                 CallContext.LogicalSetData("hello", "bastard");
                 await Task.Delay(10);
                 CallContext.LogicalGetData("hello").ShouldBe("bastard");
@@ -38,19 +37,19 @@ namespace ConfigAwait.Tests
 
         [Fact]
         public Task Awaiting()
-            => RunAsp(async () => {
+            => Run(async () => {
                 await AsyncMethod();
             });
 
         [Fact]
         public Task WaitingDirectlyForDelay()
-            => RunAsp(() => {
+            => Run(() => {
                 Task.Delay(100).Wait();
             });
 
         [Fact]
         public Task BlockingOnTaskStartedOnOtherThread()
-            => RunAsp(() => {
+            => Run(() => {
                 var task = new TaskFactory(TaskScheduler.Default)
                                 .StartNew(NestedAwait)
                                 .Unwrap();
@@ -59,7 +58,7 @@ namespace ConfigAwait.Tests
 
         [Fact]
         public Task BlockingOnTaskOnSameThread()
-            => RunAsp(() => {
+            => Run(() => {
                 var task = new TaskFactory(TaskScheduler.FromCurrentSynchronizationContext())
                                 .StartNew(NestedAwait)
                                 .Unwrap();
@@ -68,19 +67,19 @@ namespace ConfigAwait.Tests
 
         [Fact]
         public Task Blocking_Wait()
-            => RunAsp(() => {
+            => Run(() => {
                 AsyncMethod().Wait();
             });
 
         [Fact]
         public Task Blocking_Result()
-            => RunAsp(() => {
+            => Run(() => {
                 var i = AsyncMethod().Result;
             });
 
         [Fact]
         public Task Blocking_AroundAwait()
-            => RunAsp(() => {
+            => Run(() => {
                 Exec(async () => {
                     await AsyncMethod();
                 }).Wait();
@@ -88,7 +87,7 @@ namespace ConfigAwait.Tests
 
         [Fact]
         public Task Blocking_AroundCompleteConfigAwait()
-            => RunAsp(() => {
+            => Run(() => {
                 Exec(async () => {
                     await AsyncMethodCAF().ConfigureAwait(false);
                 }).Wait();
@@ -96,7 +95,7 @@ namespace ConfigAwait.Tests
 
         [Fact]
         public Task Blocking_AroundIncompleteConfigAwait()
-            => RunAsp(() => {
+            => Run(() => {
                 Exec(async () => {
                     await AsyncMethod().ConfigureAwait(false);
                 }).Wait();
@@ -104,7 +103,7 @@ namespace ConfigAwait.Tests
 
         [Fact]
         public Task Blocking_AroundSynchronousAwait()
-            => RunAsp(() => {
+            => Run(() => {
                 Exec(async () => {
                     Console.WriteLine("This will be completed synchronously!");
                 }).Wait();
@@ -112,7 +111,7 @@ namespace ConfigAwait.Tests
 
         [Fact]
         public Task ConfigAwait_AboveOnly()
-            => RunAsp(async () => {
+            => Run(async () => {
                 await Exec(() => {
                     AsyncMethod().Wait();
                 }).ConfigureAwait(false);
@@ -120,7 +119,7 @@ namespace ConfigAwait.Tests
 
         [Fact]
         public Task ConfigAwait_AboveAndBelow()
-            => RunAsp(async () => {
+            => Run(async () => {
                 await Exec(() => {
                     AsyncMethodCAF().Wait();
                 }).ConfigureAwait(false);
@@ -128,11 +127,12 @@ namespace ConfigAwait.Tests
 
         [Fact]
         public Task PreliminaryConfigAwait()
-            => RunAsp(async () => {
+            => Run(async () => {
                 await Task.Delay(10).ConfigureAwait(false);
                 await Exec(() => AsyncMethod().Wait());
                 AsyncMethod().Wait();
             });
+
 
         async Task<int> AsyncMethod()
         {
@@ -159,5 +159,11 @@ namespace ConfigAwait.Tests
             return 13;
         }
 
+
+        protected Test Run(Func<Task> fn)
+            => new TRunner().Run(fn);
+
+        protected Test Run(Action fn) 
+            => Run(async () => fn());
     }
 }

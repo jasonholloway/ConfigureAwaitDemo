@@ -6,8 +6,8 @@ namespace FakeAsp
 {
     public class Test
     {
-        public delegate Task FnInner(CancellationToken cancel);
         public delegate Task FnOuter(CancellationToken cancel, FnInner fnInner);
+        public delegate Task FnInner(CancellationToken cancel);
 
         readonly FnOuter _fnOuter;
         readonly FnInner _fnInner;
@@ -28,10 +28,10 @@ namespace FakeAsp
         public static Test Create(FnInner fn) => new Test((ct, fnInner) => fnInner(ct), fn);
         public static Test Empty = Create(_ => Task.FromResult(true));
 
-        public Test MapInner(Func<FnInner, FnInner> fn)
+        public Test WrapInner(Func<FnInner, FnInner> fn)
             => new Test(_fnOuter, fn(_fnInner));
 
-        public Test MapOuter(Func<FnOuter, FnOuter> fn)
+        public Test WrapOuter(Func<FnOuter, FnOuter> fn)
             => new Test(fn(_fnOuter), _fnInner);
     }
 

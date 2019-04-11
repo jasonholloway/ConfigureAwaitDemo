@@ -18,26 +18,26 @@ namespace FakeAsp.Tests
 
         [Fact]
         public Task HasAspSyncContext()
-            => RunAsp(async () => {
+            => Run(async () => {
                 SynchronizationContext.Current.ShouldBeOfType(Types.AspNetSynchronizationContext);
             });
 
         [Fact]
         public Task HasAspSyncContext_AfterAwait()
-            => RunAsp(async () => {
+            => Run(async () => {
                 await Task.Delay(10);
                 SynchronizationContext.Current.ShouldBeOfType(Types.AspNetSynchronizationContext);
             });
 
         [Fact]
         public Task ExceptionPropagates()
-            => RunAsp(async () => {
+            => Run(async () => {
                 throw new DummyException();
             }).Throws<DummyException>();
 
         [Fact]
         public Task ExceptionPropagates_AfterAwait()
-            => RunAsp(async () => {
+            => Run(async () => {
                 await Task.Delay(10);
                 throw new DummyException();
             }).Throws<DummyException>();

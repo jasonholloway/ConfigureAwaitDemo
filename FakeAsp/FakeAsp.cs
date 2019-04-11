@@ -21,15 +21,15 @@ namespace FakeAsp
         }
 
         public static Test RunAsp(FnInner fn)
-            => Create(fn)
-                .MapOuter(_ => RunArbitraryFn)
+            => Test.Create(fn)
+                .WrapOuter(_ => RunArbitraryFn)
                 .Timeout(300);
 
-        public static Test RunAsp(Func<Task> fn)
+        public static Test Run(Func<Task> fn)
             => RunAsp(_ => fn());
 
         public static Test RunAsp(Action fn)
-            => RunAsp(async () => fn());
+            => Run(async () => fn());
 
         static Task RunArbitraryFn(CancellationToken cancel, FnInner fn)
         {

@@ -7,7 +7,7 @@ namespace FakeAsp
     public static class TestExtensions
     {
         public static Test Timeout(this Test test, int timeout)
-            => test.MapInner(fn => cancel => 
+            => test.WrapInner(fn => cancel => 
             {
                 var x = FakeAsp.Context;
 
@@ -21,7 +21,7 @@ namespace FakeAsp
 
         public static Test Throws<Ex>(this Test test, string message = null)
             where Ex : Exception
-            => test.MapInner(fn => async cancel => {
+            => test.WrapInner(fn => async cancel => {
                 var x = FakeAsp.Context;
                 try
                 {

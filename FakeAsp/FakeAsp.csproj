@@ -47,6 +47,8 @@
   <ItemGroup>
     <Compile Include="ErrorCatcher.cs" />
     <Compile Include="FakeAsp.cs" />
+    <Compile Include="FakeAspRunner.cs" />
+    <Compile Include="IRunner.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Test.cs" />
     <Compile Include="TestExtensions.cs" />
