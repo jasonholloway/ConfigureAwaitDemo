@@ -19,7 +19,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConfigAwait.TaskFriendly", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConfigAwait.Legacy", "ConfigAwait.Legacy\ConfigAwait.Legacy.csproj", "{4581A6EC-61F3-4BAF-A5B1-1DD5EBDA64AF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConfigAwait.Nancy", "ConfigAwait.Nancy\ConfigAwait.Nancy.csproj", "{88E0B21D-BDA6-45F2-B636-9038319F7A4A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConfigAwait.MpdNancy", "ConfigAwait.MpdNancy\ConfigAwait.MpdNancy.csproj", "{88E0B21D-BDA6-45F2-B636-9038319F7A4A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
